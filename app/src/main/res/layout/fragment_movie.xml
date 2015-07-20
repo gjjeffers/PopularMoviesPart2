@@ -4,15 +4,6 @@
     android:orientation="vertical"
     tools:context="com.example.mainmachine.popularmoviep1.MovieFragment">
 
-    <Spinner
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:entries="@array/sort_options"
-        android:prompt="@string/sort_prompt"/>
-
     <GridView
         android:id="@+id/gvMovieList"
         android:layout_width="wrap_content"

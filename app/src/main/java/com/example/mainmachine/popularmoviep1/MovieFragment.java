@@ -4,18 +4,22 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,12 +44,17 @@ public class MovieFragment extends Fragment{
     }
 
     MovieAdapter movieAdapter;
-    String[] sortOptions;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("CurrentMovies", movieAdapter.movies);
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -56,37 +65,60 @@ public class MovieFragment extends Fragment{
         gv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent detailIntent = new Intent(getActivity(),MovieDetailActivity.class);
+                Intent detailIntent = new Intent(getActivity(), MovieDetailActivity.class);
                 detailIntent.putExtra("selected_movie", movieAdapter.getItem(position));
                 startActivity(detailIntent);
             }
         });
         movieAdapter = new MovieAdapter(getActivity(),R.layout.movie_layout, new ArrayList<Movie>());
 
+        if(savedInstanceState == null){
+            updateMovieList(getString(R.string.menu_popular));
+        }
+        else {
+            movieAdapter.setMovies((ArrayList<Movie>) savedInstanceState.get("CurrentMovies"));
+        }
         gv.setAdapter(movieAdapter);
-
-        sortOptions = getResources().getStringArray(R.array.sort_options);
-        Spinner sortSpinner = (Spinner)rootView.findViewById(R.id.spinner);
-        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                MovieFetcher request = new MovieFetcher();
-                request.execute(sortOptions[position].toString());
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-
-
-        });
-
-
 
         return rootView;
     }
 
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_popular) {
+            updateMovieList(getString(R.string.menu_popular));
+            return true;
+        }
+        else if(id == R.id.action_highest_rated){
+            updateMovieList(getString(R.string.menu_highest_rated));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void updateMovieList(String option){
+        ConnectivityManager cm = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        if(ni != null && ni.isConnectedOrConnecting()) {
+            MovieFetcher request = new MovieFetcher();
+            request.execute(option);
+        }
+        else{
+            Toast toast = Toast.makeText(getActivity(), "No Network Access",Toast.LENGTH_LONG);
+            toast.show();
+        }
+    }
 
 
     class MovieFetcher extends AsyncTask<String,Void,Movie[]> {
@@ -98,8 +130,8 @@ public class MovieFragment extends Fragment{
 
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
-            String JsonResponse = null;
-            String orderBy = params[0].equals("Most Popular")?"popularity.desc":"vote_average.desc";
+            String JsonResponse;
+            String orderBy = params[0].equals(getString(R.string.menu_popular))?"popularity.desc":"vote_average.desc";
 
 
             movieDbUri.scheme("http")
@@ -116,7 +148,7 @@ public class MovieFragment extends Fragment{
                 urlConnection.connect();
 
                 InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder buffer = new StringBuilder();
 
                 //if there is no response from the server
                 if (inputStream == null) {
@@ -142,8 +174,7 @@ public class MovieFragment extends Fragment{
                     Log.e("Response Parsing Error ", j.getMessage());
                 }
             } catch (Exception e) {
-                Toast toast = Toast.makeText(getActivity(), "Error: " + e.getMessage(),Toast.LENGTH_LONG);
-                toast.show();
+                Log.e("Error: ", e.getMessage());
             }
             finally{
                 if(urlConnection != null){
@@ -204,10 +235,15 @@ public class MovieFragment extends Fragment{
             movies = m;
         }
 
+        public void setMovies(ArrayList<Movie> m){
+            movies.addAll(m);
+            notifyDataSetChanged();
+        }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent){
             View cell = convertView;
-            MovieHolder tempM = null;
+            MovieHolder tempM;
             if(cell == null){
                 LayoutInflater inflater = ((Activity)context).getLayoutInflater();
                 cell = inflater.inflate(layoutResourceId, parent, false);
