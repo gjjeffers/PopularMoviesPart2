@@ -2,6 +2,10 @@ package com.example.mainmachine.popularmoviep1;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 class Movie implements Parcelable{
     String name;
@@ -20,8 +24,23 @@ class Movie implements Parcelable{
         this.releaseDate = in.readString();
     }
 
-    public Movie(){
+    public Movie(JSONObject movie){
+        try {
+            this.name = movie.getString("original_title");
+            this.id = movie.getString("id");
+            if (!movie.getString("poster_path").equals("null")) {
+                this.posterUri = "http://image.tmdb.org/t/p/w185" + movie.getString("poster_path");
+            }
+            this.overview = movie.getString("overview");
+            this.voteAvg = movie.getString("vote_average");
+            this.releaseDate = movie.getString("release_date");
+        }
+        catch (JSONException e){
+            Log.e("Parsing Error: ", e.getMessage());
+        }
     }
+    
+    public Movie(){}
 
     @Override
     public int describeContents() {

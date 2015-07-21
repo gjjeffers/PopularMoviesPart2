@@ -206,16 +206,8 @@ public class MovieFragment extends Fragment{
             JSONArray movieListArray = movieListJson.getJSONArray("results");
             ArrayList<Movie> returnMovie = new ArrayList<>();
             for(int i = 0; i < movieListArray.length();i++){
-                Movie tempMovie = new Movie();
                 JSONObject tempJson= movieListArray.getJSONObject(i);
-                tempMovie.name = tempJson.getString("original_title");
-                tempMovie.id = tempJson.getString("id");
-                if(!tempJson.getString("poster_path").equals("null")) {
-                    tempMovie.posterUri = "http://image.tmdb.org/t/p/w185" + tempJson.getString("poster_path");
-                }
-                tempMovie.overview = tempJson.getString("overview");
-                tempMovie.voteAvg = tempJson.getString("vote_average");
-                tempMovie.releaseDate = tempJson.getString("release_date");
+                Movie tempMovie = new Movie(tempJson);
                 returnMovie.add(tempMovie);
             }
             Movie[] returnArray = new Movie[returnMovie.size()];
