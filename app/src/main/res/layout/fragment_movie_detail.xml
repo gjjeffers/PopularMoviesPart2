@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    tools:context="com.example.mainmachine.popularmoviep1.MovieDetailActivityFragment">
+    tools:context="com.example.mainmachine.popularmoviespart2.MovieDetailActivityFragment">
 
 
     <ImageView

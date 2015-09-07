@@ -1,4 +1,4 @@
-package com.example.mainmachine.popularmoviep1;
+package com.example.mainmachine.popularmoviespart2;
 
 import android.app.Activity;
 import android.app.Fragment;
