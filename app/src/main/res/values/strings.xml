@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Popular Movies Part 1</string>
+    <string name="app_name">Popular Movies Part 2</string>
     <string name="action_settings">Settings</string>
     <string name="api_key">b5bef575dbd9991f68de0c757c61052e</string>
     <string name="sort_prompt">Sort By...</string>
