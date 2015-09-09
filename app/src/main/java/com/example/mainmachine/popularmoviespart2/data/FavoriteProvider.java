@@ -32,13 +32,17 @@ public class FavoriteProvider extends ContentProvider {
 
 
     static final int FAVORITE = 100;
-    static final int TRAILER = 101;
+    static final int FAVORITE_WITH_KEY = 101;
+    static final int TRAILER = 200;
+    static final int TRAILER_WITH_KEY = 201;
 
     static UriMatcher buildUriMatcher(){
         UriMatcher returnMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         final String authority = FavoriteContract.CONTENT_AUTHORITY;
         returnMatcher.addURI(authority, FavoriteContract.PATH_FAVORITE, FAVORITE);
+        returnMatcher.addURI(authority, FavoriteContract.PATH_FAVORITE+"/*", FAVORITE_WITH_KEY);
         returnMatcher.addURI(authority, FavoriteContract.PATH_TRAILER, TRAILER);
+        returnMatcher.addURI(authority, FavoriteContract.PATH_TRAILER+"/*", TRAILER_WITH_KEY);
 
         return returnMatcher;
     }
@@ -69,8 +73,12 @@ public class FavoriteProvider extends ContentProvider {
         switch (match){
             case FAVORITE:
                 return FavoriteEntry.CONTENT_TYPE;
+            case FAVORITE_WITH_KEY:
+                return FavoriteEntry.CONTENT_ITEM_TYPE;
             case TRAILER:
-                return  TrailerEntry.CONTENT_TYPE;
+                return TrailerEntry.CONTENT_TYPE;
+            case TRAILER_WITH_KEY:
+                return TrailerEntry.CONTENT_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown URI: " + uri);
         }
