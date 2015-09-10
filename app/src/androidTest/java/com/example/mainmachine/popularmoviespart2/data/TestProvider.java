@@ -1,6 +1,8 @@
 package com.example.mainmachine.popularmoviespart2.data;
 
 import android.content.ComponentName;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
@@ -9,6 +11,9 @@ import android.test.AndroidTestCase;
 
 import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.FavoriteEntry;
 import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.TrailerEntry;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by MainMachine on 9/8/2015.
@@ -94,4 +99,105 @@ public class TestProvider extends AndroidTestCase {
         assertEquals("Error: the FavoriteEntry CONTENT_URI with location should return FavoriteEntry.CONTENT_TYPE",
                 TrailerEntry.CONTENT_TYPE, type);    }
 
+    public void testAllFavoritesQuery() {
+        // insert our test records into the database
+        FavoriteDbHelper dbHelper = new FavoriteDbHelper(mContext);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues testFavValues = createTestSingleFavoriteValues();
+        long favoriteRowId = insertFavoriteValues(mContext);
+
+        db.close();
+
+        // Test the basic content provider query
+        Cursor favCursor = mContext.getContentResolver().query(
+                FavoriteEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Make sure we get the correct cursor out of the database
+        validateCursor("testBasicFavoriteQuery", favCursor, testFavValues);
+    }
+
+    private ContentValues createTestSingleFavoriteValues(){
+        ContentValues testValues = new ContentValues();
+        testValues.put(FavoriteEntry.COLUMN_API_ID,"1A");
+        testValues.put(FavoriteEntry.COLUMN_TITLE, "THIS MOVIE");
+        testValues.put(FavoriteEntry.COLUMN_SYN, "THIS IS THAT MOVIE");
+        testValues.put(FavoriteEntry.COLUMN_RATING,"3");
+        testValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, "2/2/2012");
+        testValues.put(FavoriteEntry.COLUMN_POSTER, "POSTER URI GOES HERE");
+        return testValues;
+    }
+
+    private ContentValues createFavoriteValues(){
+        ContentValues favValues = new ContentValues();
+        favValues.put(FavoriteEntry.COLUMN_API_ID,"1A");
+        favValues.put(FavoriteEntry.COLUMN_TITLE, "THIS MOVIE");
+        favValues.put(FavoriteEntry.COLUMN_SYN, "THIS IS THAT MOVIE");
+        favValues.put(FavoriteEntry.COLUMN_RATING,"3");
+        favValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, "2/2/2012");
+        favValues.put(FavoriteEntry.COLUMN_POSTER, "POSTER URI GOES HERE");
+        return favValues;
+    }
+
+    private ContentValues createTrailerValues(){
+        ContentValues trailerValues = new ContentValues();
+        trailerValues.put(TrailerEntry.COLUMN_MOVIE_KEY, "1A");
+        trailerValues.put(TrailerEntry.COLUMN_TRAILER_TITLE, "THIS MOVIE TRAILER #1");
+        trailerValues.put(TrailerEntry.COLUMN_TRAILER_URI, "THIS MOVIE TRAILER #1 URI");
+        return trailerValues;
+    }
+
+    private long insertFavoriteValues(Context context) {
+        // insert our test records into the database
+        FavoriteDbHelper dbHelper = new FavoriteDbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues testValues = createFavoriteValues();
+
+        long favoriteRowId;
+        favoriteRowId = db.insert("favorite", null, testValues);
+
+        // Verify we got a row back.
+        assertTrue("Error: Failure to insert Favorite Values", favoriteRowId != -1);
+
+        return favoriteRowId;
+    }
+
+    private long insertTrailerValues(Context context) {
+        // insert our test records into the database
+        FavoriteDbHelper dbHelper = new FavoriteDbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues testValues = createTrailerValues();
+
+        long trailerRowId;
+        trailerRowId = db.insert("trailer", null, testValues);
+
+        // Verify we got a row back.
+        assertTrue("Error: Failure to insert Trailer Values", trailerRowId != -1);
+
+        return trailerRowId;
+    }
+
+    private void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
+        assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
+        validateCurrentRecord(error, valueCursor, expectedValues);
+        valueCursor.close();
+    }
+
+    private void validateCurrentRecord(String error, Cursor valueCursor, ContentValues expectedValues) {
+        Set<Map.Entry<String, Object>> valueSet = expectedValues.valueSet();
+        for (Map.Entry<String, Object> entry : valueSet) {
+            String columnName = entry.getKey();
+            int idx = valueCursor.getColumnIndex(columnName);
+            assertFalse("Column '" + columnName + "' not found. " + error, idx == -1);
+            String expectedValue = entry.getValue().toString();
+            assertEquals("Value '" + entry.getValue().toString() +
+                    "' did not match the expected value '" +
+                    expectedValue + "'. " + error, expectedValue, valueCursor.getString(idx));
+        }
+    }
 }

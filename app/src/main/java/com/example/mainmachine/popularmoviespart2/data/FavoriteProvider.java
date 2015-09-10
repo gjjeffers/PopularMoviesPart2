@@ -50,8 +50,7 @@ public class FavoriteProvider extends ContentProvider {
     private Cursor getFavorites(String sortOrder){
         //returns title and post of all favorites
         SQLiteDatabase _db = dbHelper.getReadableDatabase();
-        String[] columns  = {FavoriteEntry.COLUMN_API_ID, FavoriteEntry.COLUMN_TITLE, FavoriteEntry.COLUMN_POSTER};
-        return _db.query(FavoriteEntry.TABLE_NAME,columns,null, null,null,null,sortOrder);
+        return _db.query(FavoriteEntry.TABLE_NAME,null,null, null,null,null,sortOrder);
     }
 
     private Cursor getFavoriteDetail(Uri uri, String sortOrder){
