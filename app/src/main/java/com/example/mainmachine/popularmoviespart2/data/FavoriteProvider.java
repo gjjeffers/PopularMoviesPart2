@@ -59,6 +59,19 @@ public class FavoriteProvider extends ContentProvider {
         return queryBuilder.query(dbHelper.getReadableDatabase(), null, favoriteDetailClause, new String[]{movieApiKey}, null, null, sortOrder);
     }
 
+    private Cursor getTrailers(String sortOrder){
+        SQLiteDatabase _db = dbHelper.getReadableDatabase();
+        return _db.query(TrailerEntry.TABLE_NAME,null,null, null,null,null,sortOrder);
+    }
+
+    private Cursor getTrailer(Uri uri,String sortOrder){
+        SQLiteDatabase _db = dbHelper.getReadableDatabase();
+        String movieApiKey = FavoriteContract.FavoriteEntry.getColumnApiId(uri);
+        String[] whereCols = {TrailerEntry.COLUMN_MOVIE_KEY};
+        return _db.query(TrailerEntry.TABLE_NAME,whereCols,movieApiKey, null,null,null,sortOrder);
+
+    }
+
     @Override
     public boolean onCreate() {
         dbHelper = new FavoriteDbHelper(getContext());
@@ -91,8 +104,16 @@ public class FavoriteProvider extends ContentProvider {
                 returnCursor = getFavorites(sortOrder);
                 break;
             }
-            case TRAILER:{
+            case FAVORITE_WITH_KEY:{
                 returnCursor = getFavoriteDetail(uri,sortOrder);
+                break;
+            }
+            case TRAILER:{
+                returnCursor = getTrailers(sortOrder);
+                break;
+            }
+            case TRAILER_WITH_KEY:{
+                returnCursor = getTrailer(uri,sortOrder);
                 break;
             }
             default:
@@ -135,20 +156,25 @@ public class FavoriteProvider extends ContentProvider {
         return returnUri;
     }
 
+    @Override
     public int delete(Uri uri, String selection, String[] selectionArgs){
         final SQLiteDatabase db = dbHelper.getWritableDatabase();
         final int match = uriMatcher.match(uri);
-        int returnCount = -1;
+        int returnCount;
         String whereClause;
+        if(selectionArgs == null) selectionArgs = new String[0];
 
         if(match > 0){
-            if(selection != null){
-                whereClause = FavoriteEntry._ID + " = " + selection;
-                Cursor _apiCursor = db.query(FavoriteEntry.TABLE_NAME,new String[]{FavoriteEntry.COLUMN_API_ID},whereClause,null,null,null,null);
-                int _apiKey = _apiCursor.getInt(0);
-                returnCount = db.delete(FavoriteEntry.TABLE_NAME,whereClause,null);
-                whereClause = TrailerEntry.COLUMN_MOVIE_KEY + " = " + _apiKey;
-                db.delete(TrailerEntry.TABLE_NAME,whereClause,null);
+            if(selectionArgs.length > 0){
+                whereClause = FavoriteEntry.COLUMN_API_ID + " =  ?";
+                returnCount = db.delete(FavoriteEntry.TABLE_NAME,whereClause,selectionArgs);
+                whereClause = TrailerEntry.COLUMN_MOVIE_KEY + " = ?";
+                db.delete(TrailerEntry.TABLE_NAME,whereClause,selectionArgs);
+            }
+            else{
+                returnCount = db.delete(FavoriteEntry.TABLE_NAME,null,null);
+                db.delete(TrailerEntry.TABLE_NAME,null,null);
+
             }
         }
         else{
@@ -168,14 +194,14 @@ public class FavoriteProvider extends ContentProvider {
         switch (match) {
             case FAVORITE: {
                 if(selection != null){
-                    whereClause = selection;
+                    whereClause = selection + " = ?";
                 }
                 returnCount = db.update(FavoriteEntry.TABLE_NAME, values,whereClause, selectionArgs);
                 break;
             }
             case TRAILER:{
                 if(selection != null){
-                    whereClause = selection;
+                    whereClause = selection + " = ?";
                 }
                 returnCount = db.update(TrailerEntry.TABLE_NAME, values, whereClause, selectionArgs);
                 break;

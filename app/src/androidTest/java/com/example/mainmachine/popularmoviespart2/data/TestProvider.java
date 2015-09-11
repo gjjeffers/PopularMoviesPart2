@@ -2,46 +2,24 @@ package com.example.mainmachine.popularmoviespart2.data;
 
 import android.content.ComponentName;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.test.AndroidTestCase;
 
 import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.FavoriteEntry;
 import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.TrailerEntry;
 
-import java.util.Map;
-import java.util.Set;
-
-/**
- * Created by MainMachine on 9/8/2015.
- */
 public class TestProvider extends AndroidTestCase {
-    public static final String LOG_TAG = TestProvider.class.getSimpleName();
-
     public void deleteAllRecordsProvider() {
         mContext.getContentResolver().delete(FavoriteEntry.CONTENT_URI, null, null);
         mContext.getContentResolver().delete(TrailerEntry.CONTENT_URI, null, null);
-        Cursor favCursor = mContext.getContentResolver().query(FavoriteEntry.CONTENT_URI,null,null,null,null);
-        assertEquals("Error: Not all records deleted from Favorite table", 0, favCursor.getCount());
+        Cursor favCursor = mContext.getContentResolver().query(FavoriteEntry.CONTENT_URI, null, null, null, null);
+        assertEquals("Error: Not all records deleted from database", 0, favCursor.getCount());
         favCursor.close();
-
-        Cursor trailCursor = mContext.getContentResolver().query(TrailerEntry.CONTENT_URI,null,null,null,null);
-        assertEquals("Error: Not all records delted from Trailer table",0,trailCursor.getCount());
-        trailCursor.close();
     }
 
-    public void deleteAllRecordsDB(){
-        FavoriteDbHelper dbHelper = new FavoriteDbHelper(mContext);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        db.delete(FavoriteEntry.TABLE_NAME, null, null);
-        db.delete(TrailerEntry.TABLE_NAME, null, null);
-    }
-
-    public void deleteAllRecords(){deleteAllRecordsDB();}
+    public void deleteAllRecords(){deleteAllRecordsProvider();}
 
     protected void setUp() throws Exception{
         super.setUp();
@@ -99,15 +77,10 @@ public class TestProvider extends AndroidTestCase {
         assertEquals("Error: the FavoriteEntry CONTENT_URI with location should return FavoriteEntry.CONTENT_TYPE",
                 TrailerEntry.CONTENT_TYPE, type);    }
 
-    public void testAllFavoritesQuery() {
-        // insert our test records into the database
-        FavoriteDbHelper dbHelper = new FavoriteDbHelper(mContext);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+    public void testQueryAllFavorites() {
+        ContentValues testFavValues = Util.createTestSingleFavoriteValues();
+        Util.insertFavoriteValues(mContext);
 
-        ContentValues testFavValues = createTestSingleFavoriteValues();
-        long favoriteRowId = insertFavoriteValues(mContext);
-
-        db.close();
 
         // Test the basic content provider query
         Cursor favCursor = mContext.getContentResolver().query(
@@ -119,85 +92,143 @@ public class TestProvider extends AndroidTestCase {
         );
 
         // Make sure we get the correct cursor out of the database
-        validateCursor("testBasicFavoriteQuery", favCursor, testFavValues);
+        Util.validateCursor("testBasicFavoriteQuery", favCursor, testFavValues);
     }
 
-    private ContentValues createTestSingleFavoriteValues(){
-        ContentValues testValues = new ContentValues();
-        testValues.put(FavoriteEntry.COLUMN_API_ID,"1A");
-        testValues.put(FavoriteEntry.COLUMN_TITLE, "THIS MOVIE");
-        testValues.put(FavoriteEntry.COLUMN_SYN, "THIS IS THAT MOVIE");
-        testValues.put(FavoriteEntry.COLUMN_RATING,"3");
-        testValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, "2/2/2012");
-        testValues.put(FavoriteEntry.COLUMN_POSTER, "POSTER URI GOES HERE");
-        return testValues;
+    public void testQueryOneTrailer() {
+        ContentValues testTrailerValues = Util.createTrailerValues();
+        Util.insertTrailerValues(mContext);
+
+
+        // Test the basic content provider query
+        Cursor trailerCursor = mContext.getContentResolver().query(
+                TrailerEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Make sure we get the correct cursor out of the database
+        Util.validateCursor("testOneTrailerQuery", trailerCursor, testTrailerValues);
     }
 
-    private ContentValues createFavoriteValues(){
-        ContentValues favValues = new ContentValues();
-        favValues.put(FavoriteEntry.COLUMN_API_ID,"1A");
-        favValues.put(FavoriteEntry.COLUMN_TITLE, "THIS MOVIE");
-        favValues.put(FavoriteEntry.COLUMN_SYN, "THIS IS THAT MOVIE");
-        favValues.put(FavoriteEntry.COLUMN_RATING,"3");
-        favValues.put(FavoriteEntry.COLUMN_RELEASE_DATE, "2/2/2012");
-        favValues.put(FavoriteEntry.COLUMN_POSTER, "POSTER URI GOES HERE");
-        return favValues;
+    public void testQueryOneFavorites() {
+        ContentValues testTrailerValues = Util.createTestFullFavoriteValues();
+        Util.insertFavoriteValues(mContext);
+        Util.insertTrailerValues(mContext);
+
+
+
+        // Test the basic content provider query
+        Cursor trailerCursor = mContext.getContentResolver().query(
+                FavoriteEntry.buildFavorite(testTrailerValues.getAsString(FavoriteEntry.COLUMN_API_ID)),
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Make sure we get the correct cursor out of the database
+        Util.validateCursor("testOneFavoritesQuery", trailerCursor, testTrailerValues);
     }
 
-    private ContentValues createTrailerValues(){
-        ContentValues trailerValues = new ContentValues();
-        trailerValues.put(TrailerEntry.COLUMN_MOVIE_KEY, "1A");
-        trailerValues.put(TrailerEntry.COLUMN_TRAILER_TITLE, "THIS MOVIE TRAILER #1");
-        trailerValues.put(TrailerEntry.COLUMN_TRAILER_URI, "THIS MOVIE TRAILER #1 URI");
-        return trailerValues;
+    public void testDeleteAllFavorites(){
+        Util.insertFavoriteValues(mContext);
+        Util.insertTrailerValues(mContext);
+
+        mContext.getContentResolver().delete(FavoriteEntry.CONTENT_URI, null, null);
+        Cursor delFavCheck = mContext.getContentResolver().query(FavoriteEntry.CONTENT_URI, null, null, null, null);
+        assertTrue("Not all Favorite records were deleted!", delFavCheck.getCount() == 0);
+        Cursor delTrailerCheck = mContext.getContentResolver().query(TrailerEntry.CONTENT_URI,null,null,null,null);
+        assertTrue("Not all Trailer record were deleted!", delTrailerCheck.getCount() == 0);
+        delFavCheck.close();
+        delTrailerCheck.close();
     }
 
-    private long insertFavoriteValues(Context context) {
-        // insert our test records into the database
-        FavoriteDbHelper dbHelper = new FavoriteDbHelper(context);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues testValues = createFavoriteValues();
+    public void testDeleteOneFavorite(){
+        Util.insertFavoriteValues(mContext);
+        Util.insertTrailerValues(mContext);
+        ContentValues testTrailerValues = Util.createTestFullFavoriteValues();
 
-        long favoriteRowId;
-        favoriteRowId = db.insert("favorite", null, testValues);
-
-        // Verify we got a row back.
-        assertTrue("Error: Failure to insert Favorite Values", favoriteRowId != -1);
-
-        return favoriteRowId;
+        mContext.getContentResolver().delete(FavoriteEntry.CONTENT_URI, null, new String[]{testTrailerValues.getAsString(FavoriteEntry.COLUMN_API_ID)});
+        Cursor delFavCheck = mContext.getContentResolver().query(FavoriteEntry.CONTENT_URI, null, null, null, null);
+        assertTrue("Not all Favorite records were deleted!", delFavCheck.getCount() == 0);
+        Cursor delTrailerCheck = mContext.getContentResolver().query(TrailerEntry.CONTENT_URI,null,null,null,null);
+        assertTrue("Not all Trailer record were deleted!", delTrailerCheck.getCount() == 0);
+        delFavCheck.close();
+        delTrailerCheck.close();
     }
 
-    private long insertTrailerValues(Context context) {
-        // insert our test records into the database
-        FavoriteDbHelper dbHelper = new FavoriteDbHelper(context);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues testValues = createTrailerValues();
+    public void testInsert(){
 
-        long trailerRowId;
-        trailerRowId = db.insert("trailer", null, testValues);
 
-        // Verify we got a row back.
-        assertTrue("Error: Failure to insert Trailer Values", trailerRowId != -1);
+        ContentValues testFavValues = Util.createFavoriteValues();
+        ContentValues testTrailerValues = Util.createTrailerValues();
+        mContext.getContentResolver().insert(FavoriteEntry.CONTENT_URI, testFavValues);
+        mContext.getContentResolver().insert(TrailerEntry.CONTENT_URI, testTrailerValues);
 
-        return trailerRowId;
+
+        Cursor fullCursor = mContext.getContentResolver().query(
+                FavoriteEntry.buildFavorite(testFavValues.getAsString(FavoriteEntry.COLUMN_API_ID)),
+                null,
+                null,
+                null,
+                null
+        );
+
+        Util.validateCursor("Record not properly inserted", fullCursor, Util.createTestFullFavoriteValues());
     }
 
-    private void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
-        assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
-        validateCurrentRecord(error, valueCursor, expectedValues);
-        valueCursor.close();
+    public void testUpdateFavorite(){
+        //insert initial Favorite record
+        ContentValues testFavValues = Util.createFavoriteValues();
+        mContext.getContentResolver().insert(FavoriteEntry.CONTENT_URI, testFavValues);
+
+        //insert initial Trailer record
+        ContentValues testTrailerValues = Util.createTrailerValues();
+        mContext.getContentResolver().insert(TrailerEntry.CONTENT_URI, testTrailerValues);
+
+        //update Favorite record
+        ContentValues updateFavValues = new ContentValues();
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_API_ID, "1A");
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_TITLE, "THAT MOVIE");
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_SYN, "THAT IS THIS MOVIE");
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_RATING, "5");
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_RELEASE_DATE, "12/12/2012");
+        updateFavValues.put(FavoriteContract.FavoriteEntry.COLUMN_POSTER, "UPDATED POSTER URI GOES HERE");
+
+        mContext.getContentResolver().update(FavoriteEntry.CONTENT_URI,
+                updateFavValues,
+                FavoriteEntry.COLUMN_API_ID,
+                new String[]{updateFavValues.getAsString(FavoriteEntry.COLUMN_API_ID)});
+
+        //update Trailer record
+        ContentValues updateTrailerValues = new ContentValues();
+        updateTrailerValues.put(FavoriteContract.TrailerEntry.COLUMN_MOVIE_KEY, "1A");
+        updateTrailerValues.put(FavoriteContract.TrailerEntry.COLUMN_TRAILER_TITLE, "THAT MOVIE TRAILER #1");
+        updateTrailerValues.put(FavoriteContract.TrailerEntry.COLUMN_TRAILER_URI, "THAT MOVIE TRAILER #1 URI");
+        mContext.getContentResolver().update(TrailerEntry.CONTENT_URI,
+                updateTrailerValues,
+                TrailerEntry.COLUMN_MOVIE_KEY,
+                new String[]{updateTrailerValues.getAsString(TrailerEntry.COLUMN_MOVIE_KEY)});
+
+        Cursor fullCursor = mContext.getContentResolver().query(
+                FavoriteEntry.buildFavorite(testFavValues.getAsString(FavoriteEntry.COLUMN_API_ID)),
+                null,
+                null,
+                null,
+                null
+        );
+        ContentValues resultValues = new ContentValues();
+        resultValues.putAll(updateFavValues);
+        resultValues.putAll(updateTrailerValues);
+
+
+        Util.validateCursor("Record not properly updated", fullCursor, resultValues);
     }
 
-    private void validateCurrentRecord(String error, Cursor valueCursor, ContentValues expectedValues) {
-        Set<Map.Entry<String, Object>> valueSet = expectedValues.valueSet();
-        for (Map.Entry<String, Object> entry : valueSet) {
-            String columnName = entry.getKey();
-            int idx = valueCursor.getColumnIndex(columnName);
-            assertFalse("Column '" + columnName + "' not found. " + error, idx == -1);
-            String expectedValue = entry.getValue().toString();
-            assertEquals("Value '" + entry.getValue().toString() +
-                    "' did not match the expected value '" +
-                    expectedValue + "'. " + error, expectedValue, valueCursor.getString(idx));
-        }
-    }
+
+
+
 }
