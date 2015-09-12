@@ -14,6 +14,10 @@ class Movie implements Parcelable{
     String overview;
     String voteAvg;
     String releaseDate;
+    String trailer[];
+    String trailerId[];
+    String reviewer[];
+    String review[];
 
     public Movie(Parcel in){
         this.name = in.readString();
@@ -22,6 +26,10 @@ class Movie implements Parcelable{
         this.overview = in.readString();
         this.voteAvg = in.readString();
         this.releaseDate = in.readString();
+        this.trailer = in.createStringArray();
+        this.trailerId = in.createStringArray();
+        this.reviewer = in.createStringArray();
+        this.review = in.createStringArray();
     }
 
     public Movie(JSONObject movie){
@@ -39,7 +47,7 @@ class Movie implements Parcelable{
             Log.e("Parsing Error: ", e.getMessage());
         }
     }
-    
+
     public Movie(){}
 
     @Override
@@ -55,6 +63,10 @@ class Movie implements Parcelable{
         dest.writeString(overview);
         dest.writeString(voteAvg);
         dest.writeString(releaseDate);
+        dest.writeStringArray(trailer);
+        dest.writeStringArray(trailerId);
+        dest.writeStringArray(reviewer);
+        dest.writeStringArray(review);
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {

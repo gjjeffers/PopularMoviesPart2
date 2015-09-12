@@ -8,13 +8,14 @@
         android:id="@+id/gvMovieList"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_marginTop="30px"
+        android:layout_marginTop="30dp"
         android:columnWidth="100dp"
         android:stretchMode="columnWidth"
         android:numColumns="auto_fit"
         android:gravity="center"
         android:layout_centerVertical="true"
         android:layout_alignParentStart="true"
+        android:layout_alignParentLeft = "true"
         android:layout_gravity="center_horizontal|bottom" />
 
 </LinearLayout>

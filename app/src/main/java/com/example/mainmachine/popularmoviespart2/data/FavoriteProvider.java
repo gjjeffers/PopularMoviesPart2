@@ -5,10 +5,9 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+
 import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.FavoriteEntry;
-import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.TrailerEntry;
 
 /**
  * Created by MainMachine on 9/7/2015.
@@ -17,32 +16,18 @@ public class FavoriteProvider extends ContentProvider {
 
     private static final UriMatcher uriMatcher = buildUriMatcher();
     private FavoriteDbHelper dbHelper;
-    private static final SQLiteQueryBuilder queryBuilder;
-
-    static {
-        queryBuilder = new SQLiteQueryBuilder();
-        queryBuilder.setTables(
-                FavoriteEntry.TABLE_NAME + " INNER JOIN " + TrailerEntry.TABLE_NAME + " ON " +
-                        FavoriteEntry.TABLE_NAME + "." + FavoriteEntry.COLUMN_API_ID + " = " +
-                        TrailerEntry.TABLE_NAME + "." + TrailerEntry.COLUMN_MOVIE_KEY
-        );
-    }
 
     static final String favoriteDetailClause = FavoriteEntry.TABLE_NAME + "." + FavoriteEntry.COLUMN_API_ID + " = ? ";
 
 
     static final int FAVORITE = 100;
     static final int FAVORITE_WITH_KEY = 101;
-    static final int TRAILER = 200;
-    static final int TRAILER_WITH_KEY = 201;
 
     static UriMatcher buildUriMatcher(){
         UriMatcher returnMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         final String authority = FavoriteContract.CONTENT_AUTHORITY;
         returnMatcher.addURI(authority, FavoriteContract.PATH_FAVORITE, FAVORITE);
         returnMatcher.addURI(authority, FavoriteContract.PATH_FAVORITE+"/*", FAVORITE_WITH_KEY);
-        returnMatcher.addURI(authority, FavoriteContract.PATH_TRAILER, TRAILER);
-        returnMatcher.addURI(authority, FavoriteContract.PATH_TRAILER+"/*", TRAILER_WITH_KEY);
 
         return returnMatcher;
     }
@@ -55,21 +40,9 @@ public class FavoriteProvider extends ContentProvider {
 
     private Cursor getFavoriteDetail(Uri uri, String sortOrder){
         //returns all details for a movie given apiKey
-        String movieApiKey = FavoriteContract.FavoriteEntry.getColumnApiId(uri);
-        return queryBuilder.query(dbHelper.getReadableDatabase(), null, favoriteDetailClause, new String[]{movieApiKey}, null, null, sortOrder);
-    }
-
-    private Cursor getTrailers(String sortOrder){
-        SQLiteDatabase _db = dbHelper.getReadableDatabase();
-        return _db.query(TrailerEntry.TABLE_NAME,null,null, null,null,null,sortOrder);
-    }
-
-    private Cursor getTrailer(Uri uri,String sortOrder){
         SQLiteDatabase _db = dbHelper.getReadableDatabase();
         String movieApiKey = FavoriteContract.FavoriteEntry.getColumnApiId(uri);
-        String[] whereCols = {TrailerEntry.COLUMN_MOVIE_KEY};
-        return _db.query(TrailerEntry.TABLE_NAME,whereCols,movieApiKey, null,null,null,sortOrder);
-
+        return _db.query(FavoriteEntry.TABLE_NAME,null,FavoriteEntry.COLUMN_API_ID + " = ?", new String[]{movieApiKey},null,null,sortOrder);
     }
 
     @Override
@@ -87,10 +60,6 @@ public class FavoriteProvider extends ContentProvider {
                 return FavoriteEntry.CONTENT_TYPE;
             case FAVORITE_WITH_KEY:
                 return FavoriteEntry.CONTENT_ITEM_TYPE;
-            case TRAILER:
-                return TrailerEntry.CONTENT_TYPE;
-            case TRAILER_WITH_KEY:
-                return TrailerEntry.CONTENT_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown URI: " + uri);
         }
@@ -106,14 +75,6 @@ public class FavoriteProvider extends ContentProvider {
             }
             case FAVORITE_WITH_KEY:{
                 returnCursor = getFavoriteDetail(uri,sortOrder);
-                break;
-            }
-            case TRAILER:{
-                returnCursor = getTrailers(sortOrder);
-                break;
-            }
-            case TRAILER_WITH_KEY:{
-                returnCursor = getTrailer(uri,sortOrder);
                 break;
             }
             default:
@@ -139,14 +100,6 @@ public class FavoriteProvider extends ContentProvider {
                     throw new android.database.SQLException("Failed to insert row into" + uri);
                 break;
             }
-            case TRAILER:{
-                long _id = db.insert(TrailerEntry.TABLE_NAME,null, values);
-                if(_id > 0)
-                    returnUri = TrailerEntry.buildTrailerUri(_id);
-                else
-                    throw new android.database.SQLException("Failed to insert row into" + uri);
-                break;
-            }
             default:
                 throw new UnsupportedOperationException("Unknown URI: " + uri);
 
@@ -168,13 +121,9 @@ public class FavoriteProvider extends ContentProvider {
             if(selectionArgs.length > 0){
                 whereClause = FavoriteEntry.COLUMN_API_ID + " =  ?";
                 returnCount = db.delete(FavoriteEntry.TABLE_NAME,whereClause,selectionArgs);
-                whereClause = TrailerEntry.COLUMN_MOVIE_KEY + " = ?";
-                db.delete(TrailerEntry.TABLE_NAME,whereClause,selectionArgs);
             }
             else{
                 returnCount = db.delete(FavoriteEntry.TABLE_NAME,null,null);
-                db.delete(TrailerEntry.TABLE_NAME,null,null);
-
             }
         }
         else{
@@ -198,14 +147,6 @@ public class FavoriteProvider extends ContentProvider {
                 }
                 returnCount = db.update(FavoriteEntry.TABLE_NAME, values,whereClause, selectionArgs);
                 break;
-            }
-            case TRAILER:{
-                if(selection != null){
-                    whereClause = selection + " = ?";
-                }
-                returnCount = db.update(TrailerEntry.TABLE_NAME, values, whereClause, selectionArgs);
-                break;
-
             }
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

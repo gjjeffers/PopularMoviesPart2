@@ -2,8 +2,11 @@ package com.example.mainmachine.popularmoviespart2;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.LoaderManager;
 import android.content.Context;
-import android.content.Intent;
+import android.content.CursorLoader;
+import android.content.Loader;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -23,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mainmachine.popularmoviespart2.data.FavoriteContract.FavoriteEntry;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -37,13 +41,31 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class MovieFragment extends Fragment{
 
-    public MovieFragment() {
-        // Required empty public constructor
-    }
+public class MovieFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
     MovieAdapter movieAdapter;
+    private static final int LOADER_ID = 0;
+
+    protected static final String[] MOVIE_COLUMNS = {
+            FavoriteEntry.COLUMN_API_ID,
+            FavoriteEntry.COLUMN_TITLE,
+            FavoriteEntry.COLUMN_SYN,
+            FavoriteEntry.COLUMN_RATING,
+            FavoriteEntry.COLUMN_RELEASE_DATE,
+            FavoriteEntry.COLUMN_POSTER
+    };
+    protected static int COL_API_ID = 1;
+    protected static int COL_TITLE = 2;
+    protected static int COL_SYN = 3;
+    protected static int COL_RATING = 4;
+    protected static int COL_RELEASE_DATE = 5;
+    protected static int COL_POSTER = 6;
+
+    protected ArrayList<Movie> favoriteMovies;
+
+    Callback mCallback;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +77,7 @@ public class MovieFragment extends Fragment{
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList("CurrentMovies", movieAdapter.movies);
     }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -65,12 +88,13 @@ public class MovieFragment extends Fragment{
         gv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent detailIntent = new Intent(getActivity(), MovieDetailActivity.class);
-                detailIntent.putExtra("selected_movie", movieAdapter.getItem(position));
-                startActivity(detailIntent);
+                Movie selectedMovie =  movieAdapter.getItem(position);
+                mCallback.onItemSelected(selectedMovie);
             }
         });
+
         movieAdapter = new MovieAdapter(getActivity(),R.layout.movie_layout, new ArrayList<Movie>());
+        getLoaderManager().initLoader(LOADER_ID, savedInstanceState, this);
 
         if(savedInstanceState == null){
             updateMovieList(getString(R.string.menu_popular));
@@ -80,11 +104,28 @@ public class MovieFragment extends Fragment{
         }
         gv.setAdapter(movieAdapter);
 
+
         return rootView;
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        // Activities containing this fragment must implement its callbacks.
+        if (!(activity instanceof Callback)) {
+            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+        }
+
+        mCallback = (Callback) activity;
     }
 
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
+    }
+
+    public interface Callback{
+        public void onItemSelected(Movie m);
     }
 
     @Override
@@ -103,6 +144,13 @@ public class MovieFragment extends Fragment{
             updateMovieList(getString(R.string.menu_highest_rated));
             return true;
         }
+        else if(id == R.id.action_favorite){
+            movieAdapter.clear();
+            for(Movie tempM: favoriteMovies){
+                movieAdapter.add(tempM);
+                movieAdapter.notifyDataSetChanged();
+            }
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -120,6 +168,31 @@ public class MovieFragment extends Fragment{
         }
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int i,Bundle bundle){
+        return new CursorLoader(getActivity(), FavoriteEntry.CONTENT_URI,MOVIE_COLUMNS,null,null,null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader,Cursor cursor){
+        favoriteMovies = new ArrayList<>();
+        if(cursor.moveToFirst()) {
+            while(!cursor.isAfterLast()){
+                Movie _m = new Movie();
+                _m.id = cursor.getString(COL_API_ID);
+                _m.name = cursor.getString(COL_TITLE);
+                _m.posterUri = cursor.getString(COL_POSTER);
+                _m.overview = cursor.getString(COL_SYN);
+                _m.voteAvg = cursor.getString(COL_RATING);
+                _m.releaseDate = cursor.getString(COL_RELEASE_DATE);
+                favoriteMovies.add(_m);
+                cursor.moveToNext();
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader){movieAdapter.setMovies(new ArrayList<Movie>());}
 
     class MovieFetcher extends AsyncTask<String,Void,Movie[]> {
 
@@ -228,6 +301,7 @@ public class MovieFragment extends Fragment{
         }
 
         public void setMovies(ArrayList<Movie> m){
+            movies.clear();
             movies.addAll(m);
             notifyDataSetChanged();
         }
@@ -264,6 +338,7 @@ public class MovieFragment extends Fragment{
             TextView txtTitle;
         }
     }
+
 
 
 

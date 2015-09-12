@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
+    android:layout_weight="1"
     tools:context="com.example.mainmachine.popularmoviespart2.MovieDetailActivityFragment">
 
 
@@ -20,6 +21,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_weight=".90"
         android:orientation="vertical"
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
@@ -30,11 +32,24 @@
                 android:layout_height="wrap_content"
                 android:textStyle="bold"
                 android:text="Title"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/txtDetailTitle"
-                android:paddingBottom="20px"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/txtDetailTitle"
+                    android:singleLine="false"
+                    android:paddingBottom="20dp"/>
+                <CheckBox
+                    android:id="@+id/favbutton"
+                    style="?android:attr/starStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"/>
+            </LinearLayout>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -44,7 +59,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/txtDetailSummary"
-                android:paddingBottom="20px"/>
+                android:paddingBottom="20dp"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -54,7 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/txtDetailRating"
-                android:paddingBottom="20px"/>
+                android:paddingBottom="20dp"/>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -63,7 +78,32 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/txtDetailRelease"/>
+                android:id="@+id/txtDetailRelease"
+                android:paddingBottom="20dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:text="Trailers"/>
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:layout_weight=".25"
+            android:id="@+id/lstDetailTrailer"
+            android:paddingBottom="20dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:text="Reviews"/>
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:layout_weight=".25"
+            android:id="@+id/lstDetailReview"
+            android:paddingBottom="20dp"/>
+
     </LinearLayout>
 </ScrollView>
 

@@ -1,23 +1,30 @@
 package com.example.mainmachine.popularmoviespart2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity implements MovieFragment.Callback{
+    public boolean twoPane;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        if(savedInstanceState == null){
-            getFragmentManager().beginTransaction()
-                    .add(R.id.container, new MovieFragment())
-                    .commit();
-        }
+        if (findViewById(R.id.movie_detail_container) != null){
+            twoPane = true;
 
+            if(savedInstanceState == null){
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.movie_detail_container, new MovieDetailActivity.MovieDetailActivityFragment())
+                        .commit();
+            }
+        }
+        else{
+            twoPane = false;
+        }
     }
 
     @Override
@@ -40,6 +47,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemSelected(Movie m){
+        if(twoPane) {
+            Bundle args = new Bundle();
+            args.putParcelable("selected_movie",m);
+            MovieDetailActivity.MovieDetailActivityFragment movieDetail = new MovieDetailActivity.MovieDetailActivityFragment();
+            movieDetail.setArguments(args);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.movie_detail_container, movieDetail)
+                    .commit();
+        }
+        else{
+            Intent detailIntent = new Intent(this, MovieDetailActivity.class);
+            detailIntent.putExtra("selected_movie", m);
+            startActivity(detailIntent);
+        }
+
     }
 
 

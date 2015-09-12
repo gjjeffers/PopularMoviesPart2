@@ -20,15 +20,4 @@ public class TestContract extends AndroidTestCase {
                 "content://com.example.mainmachine.popularmoviespart2/favorite/1a");
     }
 
-
-    public void testTrailerUri() throws Throwable{
-        Uri trailUri = FavoriteContract.TrailerEntry.buildTrailer(TEST_URI_EXT);
-        assertNotNull("Error: Null Uri returned.  You must fill-in buildTrailer in FavoriteContract.",
-                trailUri);
-        assertEquals("Error: Trailer not properly appended to the end of the Uri",
-                TEST_URI_EXT, trailUri.getLastPathSegment());
-        assertEquals("Error: Trailer Uri doesn't match our expected result",
-                trailUri.toString(),
-                "content://com.example.mainmachine.popularmoviespart2/trailer/1a");
-    }
 }

@@ -31,7 +31,6 @@ public class TestDb extends AndroidTestCase {
         // Android metadata (db version information)
         final HashSet<String> tableNameHashSet = new HashSet<String>();
         tableNameHashSet.add(FavoriteContract.FavoriteEntry.TABLE_NAME);
-        tableNameHashSet.add(FavoriteContract.TrailerEntry.TABLE_NAME);
 
         mContext.deleteDatabase(FavoriteDbHelper.DATABASE_NAME);
         SQLiteDatabase db = new FavoriteDbHelper(this.mContext).getWritableDatabase();
@@ -117,46 +116,4 @@ public class TestDb extends AndroidTestCase {
         db.close();
     }
 
-    public void testTrailerTable() throws Throwable {
-        // First step: Get reference to writable database
-        FavoriteDbHelper helper = new FavoriteDbHelper(this.getContext());
-        SQLiteDatabase db = helper.getWritableDatabase();
-
-        ContentValues setupValues = new ContentValues();
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_API_ID, "1A");
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_TITLE, "THIS MOVIE");
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_SYN, "IT'S THIS MOVIE");
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_RATING, "2");
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_RELEASE_DATE, "2/2/2012");
-        setupValues.put(FavoriteContract.FavoriteEntry.COLUMN_POSTER, "SOME URI");
-
-
-        // Insert ContentValues into database and get a row ID back
-        long favoriteRowId;
-        favoriteRowId = db.insert(FavoriteContract.FavoriteEntry.TABLE_NAME, null, setupValues);
-
-        // Create ContentValues of what you want to insert
-        // (you can use the createNorthPoleLocationValues if you wish)
-        ContentValues testValues = new ContentValues();
-        testValues.put(FavoriteContract.TrailerEntry.COLUMN_MOVIE_KEY, setupValues.get(FavoriteContract.FavoriteEntry.COLUMN_API_ID).toString());
-        testValues.put(FavoriteContract.TrailerEntry.COLUMN_TRAILER_TITLE, "THIS TRAILER #1");
-        testValues.put(FavoriteContract.TrailerEntry.COLUMN_TRAILER_URI, "TRAILER #1 URI");
-
-        long trailerRowId;
-        trailerRowId = db.insert(FavoriteContract.TrailerEntry.TABLE_NAME, null, testValues);
-
-        Cursor tResult = db.query(FavoriteContract.TrailerEntry.TABLE_NAME,null,null,null,null,null,null);
-
-        tResult.moveToFirst();
-
-        int index = tResult.getColumnIndex(FavoriteContract.TrailerEntry._ID);
-        int id = tResult.getInt(index);
-
-        // Verify we got a row back.
-        assertTrue("Returned value from insert", id != -1);
-        assertTrue("IDs agree", id == trailerRowId);
-
-        tResult.close();
-        db.close();
-    }
 }
